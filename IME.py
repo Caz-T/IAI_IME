@@ -130,23 +130,6 @@ def get_ngram(corpus_file: Path, pinyin_file: Path, output_file: Path):
     print("write to disk: %d secs" % int(t2 - t1))
 
 
-def get_char_freq(corpus_file: Path, pinyin_file: Path, output_file: Path):
-    d = {}
-    with opr('/Users/casorazitora/Desktop/Learn new stuff/大二下/人智导/输入法作业/语料库/sina_news') as fi:
-        corpus = [line.strip() for line in fi.readlines()]
-    with opr('/Users/casorazitora/Desktop/Learn new stuff/大二下/人智导/输入法作业/拼音汉字表/course_pinyin_dict', 'json') as fi:
-        pinyin_dict = json.load(fi)
-
-    t0 = time.time()
-    load_char_freq(corpus, d, pinyin_dict)
-    t1 = time.time()
-    print("load freq: %d secs" % int(t1 - t0))
-    with opw('word_freq_sina', 'json') as fo:
-        json.dump(d, fo)
-    t2 = time.time()
-    print("write to disk: %d secs" % int(t2 - t1))
-
-
 def validate(predict_function, output: Optional[Path] = None):
     with opr('validation/input') as fi:
         valid_set = [line.strip() for line in fi]
