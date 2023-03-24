@@ -1,4 +1,5 @@
 import json
+import math
 import time
 from pathlib import Path
 from typing import Optional
@@ -19,46 +20,42 @@ def get_max_from_dict(d: dict):
     return max(d, key=d.get)
 
 
-def parse_pinyin_by_ngram(pinyin: str, ngram_dict: dict):
-    syllables = pinyin.split()
-    if len(syllables) == 0:
+def probe_pinyin(curr_str: str, pinyin: list, index: int, nd: dict, prev_key: str, loss: float, temp_best: dict):
+    if loss > temp_best['loss']:
+        return True
+    if len(pinyin) == index:
+        temp_best['loss'] = loss
+        temp_best['str'] = curr_str
+        print(temp_best)
+        input()
+        return True
+
+    to_check = nd.get(prev_key, nd[void_mark]).get(pinyin[index], nd[void_mark][pinyin[index]])
+    for (char, char_loss) in to_check:
+        if probe_pinyin(curr_str + char, pinyin, index + 1, nd, char, loss + char_loss, temp_best):
+            return False
+
+    return True
+
+
+def parse_pinyin_by_2gram(pinyin: str, ngram_dict: dict):
+    pinyin = pinyin.split()
+    if len(pinyin) == 0:
         return ''
-    if len(syllables) == 1:
-        try:
-            return get_max_from_dict(ngram_dict[begin_mark][syllables[0]])
-        except KeyError:
-            try:
-                return get_max_from_dict(ngram_dict[void_mark][syllables[0]])
-            except KeyError:
-                return '一'
-    try:
-        answers = [get_max_from_dict(ngram_dict[begin_mark][syllables[0]]), ]
-    except KeyError:
-        try:
-            answers = [get_max_from_dict(ngram_dict[void_mark][syllables[0]]), ]
-        except KeyError:
-            answers = ['一', ]
-    for syl in syllables[1:]:
-        try:
-            answers.append(get_max_from_dict(ngram_dict[answers[-1]][syl]))
-        except KeyError:
-            try:
-                answers.append(get_max_from_dict(ngram_dict[void_mark][syl]))
-            except KeyError:
-                answers.append('一')
-    return "".join(answers)
+    best_info = {'loss': math.inf, 'str': ''}
+    print(pinyin)
+    probe_pinyin('', pinyin, 0, ngram_dict, begin_mark, 0.0, best_info)
+    return best_info['str']
 
 
 def demo():
-    with opr("2gram_sina", "json") as fi:
+    with opr("weibo", "json") as fi:
         ngram_dict = json.load(fi)
-    with opr("word_freq_sina", "json") as fi:
-        freq_dict = json.load(fi)
     print("loaded")
     while True:
         st = input()
         st = st.strip()
-        print(parse_pinyin_by_ngram(st, ngram_dict))
+        print(parse_pinyin_by_2gram(st, ngram_dict))
 
 
 def validate(predict_function, output: Optional[Path] = None):
@@ -67,6 +64,7 @@ def validate(predict_function, output: Optional[Path] = None):
     with opr('validation/std_output') as fi:
         std_output = [line.strip() for line in fi]
 
+    print(len(valid_set))
     char_count = sum([len(t) for t in std_output])
     corr_char = 0
     corr_sent = 0
@@ -79,6 +77,8 @@ def validate(predict_function, output: Optional[Path] = None):
         prediction = predict_function(valid_set[i])
         if fout is not None:
             print(prediction, file=fout)
+            print(prediction)
+        print(prediction)
         if len(prediction) != len(std_output[i]):
             continue
         flag = True
@@ -97,6 +97,6 @@ def validate(predict_function, output: Optional[Path] = None):
 
 
 if __name__ == '__main__':
-    with opr("sina_news", 'json') as fi:
+    with opr("weibo", 'json') as fi:
         ngram_dict = json.load(fi)
-    validate(lambda pyl: parse_pinyin_by_ngram(pyl, ngram_dict), Path('.') / "my_output")
+    validate(lambda pyl: parse_pinyin_by_2gram(pyl, ngram_dict), Path('.') / "my_output")

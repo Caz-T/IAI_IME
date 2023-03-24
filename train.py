@@ -1,6 +1,7 @@
 import json
 import time
 from pathlib import Path
+from math import log
 
 begin_mark = '^^^'
 void_mark = '???'
@@ -57,12 +58,18 @@ def compute_prob(ngram_dict: dict, freq_dict: dict, smoothing_factor: float = 0.
     for key in ngram_dict:
         prob_dict[key] = {}
         for syl in ngram_dict[key]:
-            prob_dict[key][syl] = {}
+            temp_syl = {}
             total = sum(ngram_dict[key][syl].values())
             for char in ngram_dict[key][syl]:
-                prob_dict[key][syl][char] = \
-                    smoothing_factor * (ngram_dict[key][syl].get(char, 0) / total) \
-                    + (1 - smoothing_factor) * freq_dict[syl][char]
+                temp_syl[char] = \
+                    - log(smoothing_factor * (ngram_dict[key][syl].get(char, 0) / total)
+                          + (1 - smoothing_factor) * freq_dict[syl][char])
+            prob_dict[key][syl] = [(k, temp_syl[k]) for k in temp_syl]
+            prob_dict[key][syl].sort(key=lambda t: t[1])
+    for key in freq_dict:
+        freq_dict[key] = [(k, freq_dict[key][k]) for k in freq_dict[key]]
+        freq_dict[key].sort(key=lambda t: t[1])
+    prob_dict[void_mark] = freq_dict
     return prob_dict
 
 
