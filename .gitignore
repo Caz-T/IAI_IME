@@ -187,4 +187,5 @@ fabric.properties
 *.json
 *.txt
 
+.DS_Store
 my_output
