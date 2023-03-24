@@ -83,7 +83,6 @@ def get_ngram(corpus_file: Path, pinyin_file: Path, output_file: Path):
     print("loaded!")
 
     t0 = time.time()
-
     load_ngram_by_char(corpus, 2, ngram_dict, freq_dict, pinyin_dict)
     t1 = time.time()
     print("load 2gram: %d secs" % int(t1 - t0))

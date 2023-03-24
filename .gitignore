@@ -185,5 +185,6 @@ fabric.properties
 .idea
 
 *.json
+*.txt
 
 my_output
