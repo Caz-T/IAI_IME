@@ -189,3 +189,5 @@ fabric.properties
 
 .DS_Store
 my_output
+prob_dicts/
+corpus/
