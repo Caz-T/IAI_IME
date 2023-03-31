@@ -7,9 +7,10 @@ from typing import Optional
 begin_mark = '^'
 
 
-def get_ngram_freq(corpus: list[str], pinyin_dict: dict, verbose: bool = True):
-    gram_dict = {}
-    freq_dict = {}
+def get_ngram_freq(corpus: list[str], pinyin_dict: dict, base_freq=None, base_gram=None,
+                   verbose: bool = True):
+    gram_dict = {} if base_gram is None else base_gram
+    freq_dict = {} if base_freq is None else base_freq
 
     accepted_chars = set([char for group in pinyin_dict.values() for char in group])
 
@@ -205,6 +206,29 @@ def train_sina_news(fa: float):
 
 
 if __name__ == '__main__':
-    pass
+    pinyin_dict = json.load(Path('pinyin_to_hanzi.json').open(mode='r', encoding='utf-8'))
+    fi = Path('corpus/txt_books.txt').open(mode='r', encoding='utf-8')
+    corpus = []
+    count = 0
+    fd = {}
+    gd = {}
+    t = time.time()
+    for line in fi:
+        corpus.append(line.strip())
+        count += 1
+        if count % 100000 == 0:
+            fd, gd = get_ngram_freq(corpus, pinyin_dict, fd, gd, False)
+            corpus.clear()
+            print("%d sentences parsed in %d seconds" % (count, time.time() - t))
+
+    with open('corpus/txt_books_fd.json', mode='w', encoding='utf-8') as fo:
+        json.dump(fd, fo)
+    with open('corpus/txt_books_gd.json', mode='w', encoding='utf-8') as fo:
+        json.dump(gd, fo)
+
+    prob_dict = compute_prob(
+        fd, gd, pinyin_dict, 0.99
+    )
+    validate(lambda t: viterbi_2gram(t.strip().split(), prob_dict, pinyin_dict))
 
 

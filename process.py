@@ -1,20 +1,32 @@
-import json
+from pathlib import Path
 
+doc = []
+for pth in Path('corpus/rmrb').glob('*'):
+    fi = pth.open(mode='r', encoding='utf-8')
+    doc += [l.replace(' ', '') for l in fi.readlines()]
+    fi.close()
 
-with open('no_tone.json', mode='r', encoding='utf-8') as fi:
-    ori_d = json.load(fi)
-with open('corpus/accepted_chars.txt', mode='r', encoding='utf-8') as fi:
-    acc_c = "".join([l.strip() for l in fi.readlines()])
+fo = open('corpus/rmrb.txt', mode='w', encoding='utf-8')
+fo.write("".join(doc))
+fo.close()
 
-new_d = {}
-for char in acc_c:
-    if char not in ori_d:
-        print(char, end=' ')
-        continue
-    if ori_d[char] not in new_d:
-        new_d[ori_d[char]] = []
-    new_d[ori_d[char]].append(char)
+doc = []
+for pth in Path('corpus/chinese_wiki/163').glob('*'):
+    try:
+        fi = pth.open(mode='r', encoding='utf-8')
+        doc += fi.readlines()
+        fi.close()
+    except:
+        print(pth)
 
-with open('outer.json', mode='w', encoding='utf-8') as fo:
-    json.dump(new_d, fo)
+for pth in Path('corpus/chinese_wiki/164').glob('*'):
+    try:
+        fi = pth.open(mode='r', encoding='utf-8')
+        doc += fi.readlines()
+        fi.close()
+    except:
+        print(pth)
 
+fo = open('corpus/wiki.txt', mode='w', encoding='utf-8')
+fo.write("".join(doc))
+fo.close()
