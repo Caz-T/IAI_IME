@@ -144,7 +144,8 @@ def get_loss_dict_core(corpus: list[list[str]], accepted_chars: set, gram_count:
     return loss_dict
 
 
-def get_loss_dict(corpus_file: Path, pinyin_file: Path, output_file: Path, smoothing_factor: float = 0.2):
+def get_loss_dict(corpus_file: Path, pinyin_file: Path, output_file: Path,
+                  gram_count: int, smoothing_factor: float = 0.2):
     with corpus_file.open(mode='r', encoding='utf-8') as fi:
         corpus = [line.strip().replace(begin_char, '') for line in fi.readlines()]
     with pinyin_file.open(mode='r', encoding='utf-8') as fi:
@@ -153,7 +154,7 @@ def get_loss_dict(corpus_file: Path, pinyin_file: Path, output_file: Path, smoot
 
     accepted_chars = set([char for group in pinyin_dict.values() for char in group])
     corpus = wash_corpus(corpus, accepted_chars)
-    loss_dict = get_loss_dict_core(corpus, accepted_chars, pinyin_dict, smoothing_factor)
+    loss_dict = get_loss_dict_core(corpus, accepted_chars, gram_count, smoothing_factor)
 
     print("start printing")
     with output_file.open(mode='w', encoding='utf-8') as fo:
@@ -248,10 +249,5 @@ def validate(predict_function, output: Optional[Path] = None, verbose: bool = Tr
     return corr_char / char_count, corr_sent / len(valid_set)
 
 
-def train_sina_news(fa: float):
-    get_loss_dict(Path('corpus/sina_news.txt'), Path('pinyin_to_hanzi.json'), Path('sina_news-%.4f.json' % fa), fa)
-
-
 if __name__ == '__main__':
     pass
-
