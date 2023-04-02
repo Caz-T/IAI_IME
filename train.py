@@ -165,6 +165,9 @@ if __name__ == '__main__':
                             help='gram count in training')
     arg_parser.add_argument('-v', '--verbose', action='store_true', default=True,
                             help='whether to provide verbose output')
+    arg_parser.add_argument('-m', '--memory-saving', action='store_true', default=False,
+                            help='save memory by removing low-frequency n-grams. '
+                                 'May worsen performance on tiny corpora')
 
     args = arg_parser.parse_args()
 
@@ -196,6 +199,10 @@ if __name__ == '__main__':
             get_freq(corp, freq_dict, False)
             get_ngram(corp, args.gram_count, gram_dict, False)
             corpus.clear()
+            if args.memory_saving:
+                for key in gram_dict:
+                    if gram_dict[key] <= 1:
+                        del gram_dict[key]
             if args.verbose:
                 print("%d records trained in %d secs" % (count, int(t1 - t0)))
     corp = wash_corpus(corpus, accepted_chars)
@@ -212,7 +219,8 @@ if __name__ == '__main__':
     if args.dest != '':
         fo = open(args.dest, mode='w', encoding='utf-8')
     else:
-        fo = open('%s_%d_loss.json' % (args.CORPUS_NAME, args.gram_count), mode='w', encoding='utf-8')
+        fo = open('%s_%d_loss%s.json' % (args.CORPUS_NAME, args.gram_count, "_small" if args.memory_saving else ''),
+                  mode='w', encoding='utf-8')
     json.dump(loss_dict, fo)
     fo.close()
     t3 = time.time()
