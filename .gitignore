@@ -185,10 +185,9 @@ fabric.properties
 .idea
 
 *.json
+*.txt
 
 .DS_Store
 my_output
-prob_dicts/
-corpus
-process.py
+corpus/
 3gram_output.txt

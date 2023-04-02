@@ -144,7 +144,8 @@ def compute_loss(freq_dict: dict, gram_dict: dict, accepted_chars: set, smoothin
     for key in freq_dict:
         freq_dict[key] = -log(freq_dict[key])
     loss_dict[default_mark] = freq_dict
-    print("done computing!")
+    if verbose:
+        print("done computing!")
 
     # pack them into one dictionary
     return {"gram_count": len(list(gram_dict.keys())[0]) + 1, "smoothing": smoothing_factor, "losses": loss_dict}
@@ -163,11 +164,10 @@ if __name__ == '__main__':
                             help='smoothing factor')
     arg_parser.add_argument('-g', '--gram-count', type=int, default=2,
                             help='gram count in training')
-    arg_parser.add_argument('-v', '--verbose', action='store_true', default=True,
+    arg_parser.add_argument('-v', '--verbose', action='store_true',
                             help='whether to provide verbose output')
-    arg_parser.add_argument('-m', '--memory-saving', action='store_true', default=False,
-                            help='save memory by removing low-frequency n-grams. '
-                                 'May worsen performance on tiny corpora')
+    arg_parser.add_argument('-t', '--threshold', type=int, default=0,
+                            help='save memory by removing n-grams with freq < threshold (worsens performance).')
 
     args = arg_parser.parse_args()
 
@@ -199,11 +199,11 @@ if __name__ == '__main__':
             get_freq(corp, freq_dict, False)
             get_ngram(corp, args.gram_count, gram_dict, False)
             corpus.clear()
-            if args.memory_saving:
+            if args.threshold > 0:
                 for key in gram_dict:
                     new_d = MyDict()
                     for char in gram_dict[key]:
-                        if gram_dict[key][char] > 1:
+                        if gram_dict[key][char] > args.threshold:
                             new_d[char] = gram_dict[key][char]
                     gram_dict[key] = new_d
             if args.verbose:
@@ -214,7 +214,7 @@ if __name__ == '__main__':
     t1 = time.time()
     if args.verbose:
         print("%d records trained in %d secs; frequency statistics completed" % (count, int(t1 - t0)))
-    loss_dict = compute_loss(freq_dict, gram_dict, accepted_chars, args.smoothing, True)
+    loss_dict = compute_loss(freq_dict, gram_dict, accepted_chars, args.smoothing, args.verbose)
     t2 = time.time()
     if args.verbose:
         print("Probabilistic data computed in %d secs" % int(t2 - t1))
