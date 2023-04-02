@@ -163,9 +163,9 @@ if __name__ == '__main__':
                             help='smoothing factor')
     arg_parser.add_argument('-g', '--gram-count', type=int, default=2,
                             help='gram count in training')
-    arg_parser.add_argument('-v', '--verbose', action='store_true', default=True,
+    arg_parser.add_argument('-v', '--verbose', action='store_true',
                             help='whether to provide verbose output')
-    arg_parser.add_argument('-m', '--memory-saving', action='store_true', default=False,
+    arg_parser.add_argument('-m', '--memory-saving', action='store_true',
                             help='save memory by removing low-frequency n-grams. '
                                  'May worsen performance on tiny corpora')
 
