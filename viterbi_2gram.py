@@ -31,7 +31,7 @@ def wash_corpus(corpus: list[str], accepted_chars: set):
     return washed_corpus
 
 
-def get_freq(corpus: list[list[str]], verbose: bool = True):
+def get_freq(corpus: list[list[str]], base_dict: MyDict = None, verbose: bool = True):
     """
     Count frequency of every character in a corpus.
 
@@ -39,7 +39,7 @@ def get_freq(corpus: list[list[str]], verbose: bool = True):
     :param verbose: provide verbose output or not.
     :return: a frequency dictionary, each key-value pair denoting one character. Characters not present in the corpus do not have an entry.
     """
-    freq_dict = MyDict()
+    freq_dict = MyDict() if base_dict is None else base_dict
 
     for sent in corpus:
         for char in "".join(sent):
@@ -48,7 +48,7 @@ def get_freq(corpus: list[list[str]], verbose: bool = True):
     return freq_dict
 
 
-def get_ngram(corpus: list[list[str]], gram_count: int, verbose: bool = True):
+def get_ngram(corpus: list[list[str]], gram_count: int, base_dict: MyDict = None, verbose: bool = True):
     """
     Count n-gram frequency of a given corpus.
 
@@ -57,7 +57,7 @@ def get_ngram(corpus: list[list[str]], gram_count: int, verbose: bool = True):
     :param verbose: provide verbose output or not.
     :return: an n-gram dictionary. Each key is a (n-1)-chars-long sector, and its value is a dict holding the frequency of all its successive parts. Patterns not present in the corpus do not have an entry.
     """
-    gram_dict = MyDict()
+    gram_dict = MyDict() if base_dict is None else base_dict
 
     count = 0
     t = time.time()
@@ -174,7 +174,7 @@ def viterbi_ngram(pinyin: list[str], loss_dict: dict, pinyin_dict: dict, gram_co
 
 def demo():
     print(time.time())
-    with open('weibo_2gram.json', mode='r', encoding='utf-8') as fi:
+    with open('weibo_loss.json', mode='r', encoding='utf-8') as fi:
         loss_dict = json.load(fi)
     print(time.time())
     with open('pinyin_to_hanzi.json', mode='r', encoding='utf-8') as fi:
@@ -230,7 +230,7 @@ def validate(predict_function, output: Optional[Path] = None, verbose: bool = Tr
 
 
 def demo_validate():
-    with open('weibo_3gram.json', mode='r', encoding='utf-8') as fi:
+    with open('sina_loss.json', mode='r', encoding='utf-8') as fi:
         loss_dict = json.load(fi)
     with open('pinyin_to_hanzi.json', mode='r', encoding='utf-8') as fi:
         pinyin_dict = json.load(fi)
@@ -239,20 +239,40 @@ def demo_validate():
     validate(lambda t: viterbi_ngram(t.split(), loss_dict, pinyin_dict, 3, 0.9999), Path('3gram_output.txt'))
 
 
-if __name__ == '__main__':
-    demo_validate()
-    demo()
-    with open('corpus/weibo.txt', mode='r', encoding='utf-8') as fi:
-        corpus = [line.strip().replace(begin_char, '') for line in fi.readlines()]
+def t0():
     with open('pinyin_to_hanzi.json', mode='r', encoding='utf-8') as fi:
         pinyin_dict = json.load(fi)
+    fi = open('corpus/sina_news.txt', mode='r', encoding='utf-8')
     print("loaded!")
-
     accepted_chars = set([char for group in pinyin_dict.values() for char in group])
-    corpus = wash_corpus(corpus, accepted_chars)
-    loss_dict = get_loss_dict(corpus, accepted_chars, 3, 0.9999)
 
-    with open('weibo_3gram.json', mode='w', encoding='utf-8') as fo:
+    count = 0
+    corpus = []
+    gram_dict = MyDict()
+    freq_dict = MyDict()
+    t0 = time.time()
+    for line in fi:
+        corpus.append(line.strip().replace(begin_char, ''))
+        count += 1
+        if count % 100000 == 0:
+            print(count)
+            corp = wash_corpus(corpus, accepted_chars)
+            get_freq(corp, freq_dict, False)
+            get_ngram(corp, 3, gram_dict, False)
+            corpus.clear()
+    corp = wash_corpus(corpus, accepted_chars)
+    get_freq(corp, freq_dict)
+    get_ngram(corp, 3, gram_dict)
+    t1 = time.time()
+    loss_dict = compute_loss(freq_dict, gram_dict, accepted_chars, 0.9999, True)
+    t2 = time.time()
+    with open('txt_3_loss.json', mode='w', encoding='utf-8') as fo:
         json.dump(loss_dict, fo)
+    t3 = time.time()
+    print("%d, %d, %d, %d" % (t0, t1, t2, t3))
+    demo_validate()
+    demo()
 
 
+if __name__ == '__main__':
+    pass
