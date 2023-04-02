@@ -22,18 +22,18 @@ for i in range(5):
         if count % 100000 == 0:
             corp = wash_corpus(corpus, accepted_chars, False)
             get_freq(corp, freq_dict, False)
-            get_ngram(corp, 3, gram_dict, False)
+            get_ngram(corp, 2, gram_dict, False)
             corpus.clear()
             print("%d records trained" % count)
     corp = wash_corpus(corpus, accepted_chars, False)
     get_freq(corp, freq_dict, False)
-    get_ngram(corp, 3, gram_dict, False)
+    get_ngram(corp, 2, gram_dict, False)
 
     for key in gram_dict:
-        for char in gram_dict.keys():
+        for char in gram_dict[key]:
             gram_dict[key][char] *= weight[i]
 
 loss_dict = compute_loss(freq_dict, gram_dict, accepted_chars, 0.9999, True)
-fo = open('weighted.json', mode='w', encoding='utf-8')
+fo = open('weighted_2.json', mode='w', encoding='utf-8')
 json.dump(loss_dict, fo)
 fo.close()

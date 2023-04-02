@@ -205,7 +205,10 @@ if __name__ == '__main__':
                     for char in gram_dict[key]:
                         if gram_dict[key][char] > args.threshold:
                             new_d[char] = gram_dict[key][char]
-                    gram_dict[key] = new_d
+                    if len(new_d.keys()) >= 1:
+                        gram_dict[key] = new_d
+                    else:
+                        del gram_dict[key]
             if args.verbose:
                 print("%d records trained in %d secs" % (count, int(t1 - t0)))
     corp = wash_corpus(corpus, accepted_chars, False)
