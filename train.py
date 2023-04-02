@@ -144,7 +144,8 @@ def compute_loss(freq_dict: dict, gram_dict: dict, accepted_chars: set, smoothin
     for key in freq_dict:
         freq_dict[key] = -log(freq_dict[key])
     loss_dict[default_mark] = freq_dict
-    print("done computing!")
+    if verbose:
+        print("done computing!")
 
     # pack them into one dictionary
     return {"gram_count": len(list(gram_dict.keys())[0]) + 1, "smoothing": smoothing_factor, "losses": loss_dict}
@@ -214,7 +215,7 @@ if __name__ == '__main__':
     t1 = time.time()
     if args.verbose:
         print("%d records trained in %d secs; frequency statistics completed" % (count, int(t1 - t0)))
-    loss_dict = compute_loss(freq_dict, gram_dict, accepted_chars, args.smoothing, True)
+    loss_dict = compute_loss(freq_dict, gram_dict, accepted_chars, args.smoothing, args.verbose)
     t2 = time.time()
     if args.verbose:
         print("Probabilistic data computed in %d secs" % int(t2 - t1))
