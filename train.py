@@ -18,8 +18,9 @@ begin_char = '^'
 default_char = '#'
 
 
-def wash_corpus(corpus: list[str], accepted_chars: set):
-    print("Washing corpus")
+def wash_corpus(corpus: list[str], accepted_chars: set, verbose: bool = True):
+    if verbose:
+        print("Washing corpus")
     washed_corpus = []
     for sent in corpus:
         sent = sent.strip()
@@ -146,7 +147,7 @@ def compute_loss(freq_dict: dict, gram_dict: dict, accepted_chars: set, smoothin
     print("done computing!")
 
     # pack them into one dictionary
-    return {"smoothing": smoothing_factor, "losses": loss_dict}
+    return {"gram_count": len(list(gram_dict.keys())[0]) + 1, "smoothing": smoothing_factor, "losses": loss_dict}
 
 
 if __name__ == '__main__':
@@ -193,7 +194,7 @@ if __name__ == '__main__':
             t1 = time.time()
             if args.verbose:
                 print("%d records trained in %d secs" % (count, int(t1 - t0)))
-            corp = wash_corpus(corpus, accepted_chars)
+            corp = wash_corpus(corpus, accepted_chars, False)
             get_freq(corp, freq_dict, False)
             get_ngram(corp, args.gram_count, gram_dict, False)
             corpus.clear()

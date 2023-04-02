@@ -55,7 +55,7 @@ if __name__ == '__main__':
                             help='path to loss dictionary trained with train.py')
     arg_parser.add_argument('-p', '--pinyin-dict', default='pinyin_dict.json',
                             help='path to pinyin dictionary. Leave blank for default')
-    arg_parser.add_argument('-o', '--output-path', default='',
+    arg_parser.add_argument('-o', '--output-dict', default='',
                             help='path to parsed output. Leave blank to suppress writing to file')
     args = arg_parser.parse_args()
 
