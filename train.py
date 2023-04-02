@@ -201,9 +201,11 @@ if __name__ == '__main__':
             corpus.clear()
             if args.memory_saving:
                 for key in gram_dict:
+                    new_d = {}
                     for char in gram_dict[key]:
-                        if gram_dict[key][char] <= 1:
-                            del gram_dict[key][char]
+                        if gram_dict[key][char] > 1:
+                            new_d[char] = gram_dict[key][char]
+                    gram_dict[key] = new_d
             if args.verbose:
                 print("%d records trained in %d secs" % (count, int(t1 - t0)))
     corp = wash_corpus(corpus, accepted_chars, False)
