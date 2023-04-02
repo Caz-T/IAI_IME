@@ -205,7 +205,7 @@ if __name__ == '__main__':
                         del gram_dict[key]
             if args.verbose:
                 print("%d records trained in %d secs" % (count, int(t1 - t0)))
-    corp = wash_corpus(corpus, accepted_chars)
+    corp = wash_corpus(corpus, accepted_chars, False)
     get_freq(corp, freq_dict, False)
     get_ngram(corp, args.gram_count, gram_dict, False)
     t1 = time.time()
