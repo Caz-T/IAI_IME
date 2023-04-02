@@ -174,7 +174,7 @@ def viterbi_ngram(pinyin: list[str], loss_dict: dict, pinyin_dict: dict, gram_co
 
 def demo():
     print(time.time())
-    with open('weibo_loss.json', mode='r', encoding='utf-8') as fi:
+    with open('weibo_2gram.json', mode='r', encoding='utf-8') as fi:
         loss_dict = json.load(fi)
     print(time.time())
     with open('pinyin_to_hanzi.json', mode='r', encoding='utf-8') as fi:
@@ -230,18 +230,18 @@ def validate(predict_function, output: Optional[Path] = None, verbose: bool = Tr
 
 
 def demo_validate():
-    with open('weibo_loss.json', mode='r', encoding='utf-8') as fi:
+    with open('weibo_3gram.json', mode='r', encoding='utf-8') as fi:
         loss_dict = json.load(fi)
     with open('pinyin_to_hanzi.json', mode='r', encoding='utf-8') as fi:
         pinyin_dict = json.load(fi)
     print('file loaded')
 
-    validate(lambda t: viterbi_ngram(t.split(), loss_dict, pinyin_dict, 3, 0.99), Path('3gram_output.txt'))
+    validate(lambda t: viterbi_ngram(t.split(), loss_dict, pinyin_dict, 3, 0.9999), Path('3gram_output.txt'))
 
 
 if __name__ == '__main__':
     demo_validate()
-    """demo()
+    demo()
     with open('corpus/weibo.txt', mode='r', encoding='utf-8') as fi:
         corpus = [line.strip().replace(begin_char, '') for line in fi.readlines()]
     with open('pinyin_to_hanzi.json', mode='r', encoding='utf-8') as fi:
@@ -250,9 +250,9 @@ if __name__ == '__main__':
 
     accepted_chars = set([char for group in pinyin_dict.values() for char in group])
     corpus = wash_corpus(corpus, accepted_chars)
-    loss_dict = get_loss_dict(corpus, accepted_chars, 3, 0.99)
+    loss_dict = get_loss_dict(corpus, accepted_chars, 3, 0.9999)
 
-    with open('weibo_loss.json', mode='w', encoding='utf-8') as fo:
-        json.dump(loss_dict, fo)"""
+    with open('weibo_3gram.json', mode='w', encoding='utf-8') as fo:
+        json.dump(loss_dict, fo)
 
 

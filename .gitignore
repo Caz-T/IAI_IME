@@ -191,3 +191,4 @@ my_output
 prob_dicts/
 corpus/
 process.py
+3gram_output.txt
