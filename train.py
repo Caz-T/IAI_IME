@@ -222,7 +222,7 @@ if __name__ == '__main__':
     if args.dest != '':
         fo = open(args.dest, mode='w', encoding='utf-8')
     else:
-        fo = open('%s_%d_loss%s.json' % (args.CORPUS_NAME, args.gram_count, "_small" if args.memory_saving else ''),
+        fo = open('%s_%d_loss%s.json' % (args.CORPUS_NAME, args.gram_count, "_small" if args.threshold > 0 else ''),
                   mode='w', encoding='utf-8')
     json.dump(loss_dict, fo)
     fo.close()
