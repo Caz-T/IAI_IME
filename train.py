@@ -1,11 +1,17 @@
 import json
-import math
 import time
 from pathlib import Path
 from math import log
 from typing import Optional
 
-from mydict import MyDict
+
+class MyDict(dict):
+    """
+    Convenience custom class, supporting dict-like operations and value increment.
+    """
+    def incr(self, key, val=1):
+        self[key] = self.get(key, 0) + val
+
 
 begin_char = '^'
 default_char = '#'
@@ -42,7 +48,14 @@ def get_freq(corpus: list[list[str]], base_dict: MyDict = None, verbose: bool = 
     """
     freq_dict = MyDict() if base_dict is None else base_dict
 
+    count = 0
+    t = time.time()
     for sent in corpus:
+        count += 1
+        if count % 10000 == 0:
+            newt = time.time()
+            if verbose:
+                print("%d / %d sentences parsed in %d seconds" % (count, len(corpus), newt - t))
         for char in "".join(sent):
             freq_dict.incr(char)
 
@@ -135,106 +148,6 @@ def compute_loss(freq_dict: dict, gram_dict: dict, accepted_chars: set, smoothin
     return {"smoothing": smoothing_factor, "losses": loss_dict}
 
 
-def viterbi_ngram(pinyin: list[str], loss_dict: dict, pinyin_dict: dict, gram_count: int):
-    # Each entry in a layer is of form added_char: (min_loss, prefix_str).
-    # Both store what you would expect them to.
-    begin_mark = begin_char * (gram_count - 1)
-    prev_layer = {begin_char: (0, begin_mark)}
-    curr_layer = {}
-    default_mark = default_char * (gram_count - 1)
-    factor_loss = -log(1 - loss_dict['smoothing'])
-    loss_dict = loss_dict['losses']
-
-    for syl in pinyin:
-        if syl not in pinyin_dict:
-            # panic: output an underscore and restart the sentence
-            prev_best = min(prev_layer.values(), key=lambda t: t[0])
-            curr_layer = {begin_mark: (prev_best[0], prev_best[1] + '_')}
-        else:
-            for char in pinyin_dict[syl]:
-                prev_best_key = ''
-                min_loss = math.inf
-                for key in prev_layer:
-                    ngram_prefix = prev_layer[key][1][1 - gram_count:]
-                    loss = prev_layer[key][0] + loss_dict.get(ngram_prefix, loss_dict[default_mark]).get(
-                        char, factor_loss + loss_dict[default_mark][char])
-                    if loss < min_loss:
-                        min_loss = loss
-                        prev_best_key = key
-                curr_layer[char] = (min_loss, prev_layer[prev_best_key][1] + char)
-        prev_layer = curr_layer
-        curr_layer = {}
-
-    return prev_layer[min(prev_layer, key=lambda k: prev_layer[k][0])][1][gram_count - 1:]
-
-
-def demo():
-    print(time.time())
-    with open('weibo_loss.json', mode='r', encoding='utf-8') as fi:
-        loss_dict = json.load(fi)
-    print(time.time())
-    with open('pinyin_to_hanzi.json', mode='r', encoding='utf-8') as fi:
-        pinyin_dict = json.load(fi)
-    print(time.time())
-
-    while True:
-        py = input()
-        py = py.strip().split()
-        print(viterbi_ngram(py, loss_dict, pinyin_dict, 2))
-
-
-def validate(predict_function, output: Optional[Path] = None, verbose: bool = True):
-    with open('validation/input.txt', mode='r', encoding='utf-8') as fi:
-        valid_set = [line.strip() for line in fi]
-    with open('validation/std_output.txt', mode='r', encoding='utf-8') as fi:
-        std_output = [line.strip() for line in fi]
-
-    if verbose:
-        print(len(valid_set))
-    t0 = time.time()
-    char_count = sum([len(t) for t in std_output])
-    corr_char = 0
-    corr_sent = 0
-    if output is not None:
-        fout = output.open(mode='w', encoding='utf-8')
-    else:
-        fout = None
-
-    for i in range(len(valid_set)):
-        prediction = predict_function(valid_set[i])
-        if fout is not None:
-            print(prediction, file=fout)
-        if len(prediction) != len(std_output[i]):
-            continue
-        flag = True
-        for j in range(len(prediction)):
-            if prediction[j] == std_output[i][j]:
-                corr_char += 1
-            else:
-                flag = False
-        if flag:
-            corr_sent += 1
-    elapsed = time.time() - t0
-
-    if fout is not None:
-        fout.close()
-    if verbose:
-        print("By character: %d / %d, accuracy %.4f" % (corr_char, char_count, corr_char / char_count))
-        print("By sentence: %d / %d, accuracy %.4f" % (corr_sent, len(valid_set), corr_sent / len(valid_set)))
-        print("Validation time: %d secs, avg %.2f sentences per second" % (int(elapsed), len(valid_set) / elapsed))
-    return corr_char / char_count, corr_sent / len(valid_set)
-
-
-def demo_validate():
-    with open('sina_loss.json', mode='r', encoding='utf-8') as fi:
-        loss_dict = json.load(fi)
-    with open('pinyin_to_hanzi.json', mode='r', encoding='utf-8') as fi:
-        pinyin_dict = json.load(fi)
-    print('file loaded')
-
-    validate(lambda t: viterbi_ngram(t.split(), loss_dict, pinyin_dict, 3), Path('3gram_output.txt'))
-
-
 def train(corpus_name: str, gram_count: int):
     with open('pinyin_to_hanzi.json', mode='r', encoding='utf-8') as fi:
         pinyin_dict = json.load(fi)
@@ -272,6 +185,3 @@ def train(corpus_name: str, gram_count: int):
     t3 = time.time()
     print("Written to disk in %d secs" % int(t3 - t2))
 
-
-if __name__ == '__main__':
-    pass
