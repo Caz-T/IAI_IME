@@ -201,8 +201,9 @@ if __name__ == '__main__':
             corpus.clear()
             if args.memory_saving:
                 for key in gram_dict:
-                    if gram_dict[key] <= 1:
-                        del gram_dict[key]
+                    for char in gram_dict[key]:
+                        if gram_dict[key][char] <= 1:
+                            del gram_dict[key][char]
             if args.verbose:
                 print("%d records trained in %d secs" % (count, int(t1 - t0)))
     corp = wash_corpus(corpus, accepted_chars, False)
@@ -211,7 +212,7 @@ if __name__ == '__main__':
     t1 = time.time()
     if args.verbose:
         print("%d records trained in %d secs; frequency statistics completed" % (count, int(t1 - t0)))
-    loss_dict = compute_loss(freq_dict, gram_dict, accepted_chars, 0.9999, True)
+    loss_dict = compute_loss(freq_dict, gram_dict, accepted_chars, args.smoothing, True)
     t2 = time.time()
     if args.verbose:
         print("Probabilistic data computed in %d secs" % int(t2 - t1))
