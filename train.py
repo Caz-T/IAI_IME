@@ -192,12 +192,12 @@ if __name__ == '__main__':
         count += 1
         if count % 100000 == 0:
             t1 = time.time()
-            if args.verbose:
-                print("%d records trained in %d secs" % (count, int(t1 - t0)))
             corp = wash_corpus(corpus, accepted_chars, False)
             get_freq(corp, freq_dict, False)
             get_ngram(corp, args.gram_count, gram_dict, False)
             corpus.clear()
+            if args.verbose:
+                print("%d records trained in %d secs" % (count, int(t1 - t0)))
     corp = wash_corpus(corpus, accepted_chars)
     get_freq(corp, freq_dict, False)
     get_ngram(corp, args.gram_count, gram_dict, False)
