@@ -1,5 +1,6 @@
 import json
 import time
+import argparse
 from pathlib import Path
 from math import log
 from typing import Optional
@@ -148,40 +149,73 @@ def compute_loss(freq_dict: dict, gram_dict: dict, accepted_chars: set, smoothin
     return {"smoothing": smoothing_factor, "losses": loss_dict}
 
 
-def train(corpus_name: str, gram_count: int):
-    with open('pinyin_to_hanzi.json', mode='r', encoding='utf-8') as fi:
-        pinyin_dict = json.load(fi)
-    print("Pinyin dictionary loaded")
-    fi = open('corpus/%d.txt' % corpus_name, mode='r', encoding='utf-8')
+if __name__ == '__main__':
+    arg_parser = argparse.ArgumentParser(description="Course project 1 for IAI 2023 Spring. "
+                                                     "Trains a n-gram hidden Markov model for Viterbi probing.")
+    arg_parser.add_argument('CORPUS_NAME', type=str,
+                            help='name of corpus (place the corpus file in ./corpus/ and name it {corpus_name}.txt')
+    arg_parser.add_argument('-p', '--pinyin-dict', type=str, default='pinyin_dict.json',
+                            help='path to pinyin-to-hanzi dictionary in json format')
+    arg_parser.add_argument('-d', '--dest', type=str, default='',
+                            help='path to desired destination of training result')
+    arg_parser.add_argument('-s', '--smoothing', type=float, default=0.9999,
+                            help='smoothing factor')
+    arg_parser.add_argument('-g', '--gram-count', type=int, default=2,
+                            help='gram count in training')
+    arg_parser.add_argument('-v', '--verbose', action='store_true', default=True,
+                            help='whether to provide verbose output')
+
+    args = arg_parser.parse_args()
+
+    try:
+        with open(args.pinyin_dict, mode='r', encoding='utf-8') as fi:
+            pinyin_dict = json.load(fi)
+    except FileNotFoundError:
+        print("Pinyin dictionary not found. "
+              "Check whether you have placed pinyin_dict.json in the same folder as this script.")
+        exit(1)
+    if args.verbose:
+        print("Pinyin dictionary loaded")
+    fi = open('corpus/%s.txt' % args.CORPUS_NAME, mode='r', encoding='utf-8')
     accepted_chars = set([char for group in pinyin_dict.values() for char in group])
 
     count = 0
     corpus = []
     gram_dict = MyDict()
     freq_dict = MyDict()
-    print("Start training")
+    if args.verbose:
+        print("Start training")
     t0 = time.time()
     for line in fi:
         corpus.append(line.strip().replace(begin_char, ''))
         count += 1
         if count % 100000 == 0:
             t1 = time.time()
-            print("%d records trained in %d secs" % (count, int(t1 - t0)))
+            if args.verbose:
+                print("%d records trained in %d secs" % (count, int(t1 - t0)))
             corp = wash_corpus(corpus, accepted_chars)
             get_freq(corp, freq_dict, False)
-            get_ngram(corp, gram_count, gram_dict, False)
+            get_ngram(corp, args.gram_count, gram_dict, False)
             corpus.clear()
     corp = wash_corpus(corpus, accepted_chars)
     get_freq(corp, freq_dict, False)
-    get_ngram(corp, gram_count, gram_dict, False)
+    get_ngram(corp, args.gram_count, gram_dict, False)
     t1 = time.time()
-    print("%d records trained in %d secs; frequency statistics completed" % (count, int(t1 - t0)))
+    if args.verbose:
+        print("%d records trained in %d secs; frequency statistics completed" % (count, int(t1 - t0)))
     loss_dict = compute_loss(freq_dict, gram_dict, accepted_chars, 0.9999, True)
     t2 = time.time()
-    print("Probabilistic data computed in %d secs" % int(t2 - t1))
-    print("Finished training on corpora %s in %d seconds" % (corpus_name, int(t2 - t0)))
-    with open('%s_%d_loss.json' % (corpus_name, gram_count), mode='w', encoding='utf-8') as fo:
-        json.dump(loss_dict, fo)
+    if args.verbose:
+        print("Probabilistic data computed in %d secs" % int(t2 - t1))
+        print("Finished training on corpora %s in %d seconds" % (args.CORPUS_NAME, int(t2 - t0)))
+    if args.dest != '':
+        fo = open(args.dest, mode='w', encoding='utf-8')
+    else:
+        fo = open('%s_%d_loss.json' % (args.CORPUS_NAME, args.gram_count), mode='w', encoding='utf-8')
+    json.dump(loss_dict, fo)
+    fo.close()
     t3 = time.time()
-    print("Written to disk in %d secs" % int(t3 - t2))
+    if args.verbose:
+        print("Written to disk in %d secs" % int(t3 - t2))
+
 

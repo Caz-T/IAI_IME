@@ -1,10 +1,4 @@
-import json
-import math
-import time
-from pathlib import Path
-from math import log
-from typing import Optional
-
+from math import log, inf
 
 begin_char = '^'
 default_char = '#'
@@ -28,7 +22,7 @@ def viterbi_ngram(pinyin: list[str], loss_dict: dict, pinyin_dict: dict, gram_co
         else:
             for char in pinyin_dict[syl]:
                 prev_best_key = ''
-                min_loss = math.inf
+                min_loss = inf
                 for key in prev_layer:
                     ngram_prefix = prev_layer[key][1][1 - gram_count:]
                     loss = prev_layer[key][0] + loss_dict.get(ngram_prefix, loss_dict[default_mark]).get(
@@ -41,22 +35,3 @@ def viterbi_ngram(pinyin: list[str], loss_dict: dict, pinyin_dict: dict, gram_co
         curr_layer = {}
 
     return prev_layer[min(prev_layer, key=lambda k: prev_layer[k][0])][1][gram_count - 1:]
-
-
-def demo():
-    print(time.time())
-    with open('weibo_loss.json', mode='r', encoding='utf-8') as fi:
-        loss_dict = json.load(fi)
-    print(time.time())
-    with open('pinyin_to_hanzi.json', mode='r', encoding='utf-8') as fi:
-        pinyin_dict = json.load(fi)
-    print(time.time())
-
-    while True:
-        py = input()
-        py = py.strip().split()
-        print(viterbi_ngram(py, loss_dict, pinyin_dict, 2))
-
-
-if __name__ == '__main__':
-    pass
