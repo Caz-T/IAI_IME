@@ -182,13 +182,13 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 # idea folder, uncomment if you don't need it
-.idea/
+.idea
 
 *.json
 
 .DS_Store
 my_output
 prob_dicts/
-corpus/
+corpus
 process.py
 3gram_output.txt
