@@ -166,9 +166,8 @@ if __name__ == '__main__':
                             help='gram count in training')
     arg_parser.add_argument('-v', '--verbose', action='store_true',
                             help='whether to provide verbose output')
-    arg_parser.add_argument('-m', '--memory-saving', action='store_true',
-                            help='save memory by removing low-frequency n-grams. '
-                                 'May worsen performance on tiny corpora')
+    arg_parser.add_argument('-t', '--threshold', type=int, default=0,
+                            help='save memory by removing n-grams with freq < threshold (worsens performance).')
 
     args = arg_parser.parse_args()
 
@@ -200,11 +199,11 @@ if __name__ == '__main__':
             get_freq(corp, freq_dict, False)
             get_ngram(corp, args.gram_count, gram_dict, False)
             corpus.clear()
-            if args.memory_saving:
+            if args.threshold > 0:
                 for key in gram_dict:
                     new_d = MyDict()
                     for char in gram_dict[key]:
-                        if gram_dict[key][char] > 1:
+                        if gram_dict[key][char] > args.threshold:
                             new_d[char] = gram_dict[key][char]
                     gram_dict[key] = new_d
             if args.verbose:
