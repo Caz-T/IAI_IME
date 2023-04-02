@@ -172,7 +172,7 @@ if __name__ == '__main__':
             pinyin_dict = json.load(fi)
     except FileNotFoundError:
         print("Pinyin dictionary not found. "
-              "Check whether you have placed pinyin_dict.json in the same folder as this script.")
+              "Check whether pinyin_dict.json is placed in the same folder as this script.")
         exit(1)
     if args.verbose:
         print("Pinyin dictionary loaded")

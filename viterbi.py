@@ -4,9 +4,10 @@ begin_char = '^'
 default_char = '#'
 
 
-def viterbi_ngram(pinyin: list[str], loss_dict: dict, pinyin_dict: dict, gram_count: int):
+def viterbi_ngram(pinyin: list[str], loss_dict: dict, pinyin_dict: dict):
     # Each entry in a layer is of form added_char: (min_loss, prefix_str).
     # Both store what you would expect them to.
+    gram_count = len(loss_dict['losses'].keys()[0])
     begin_mark = begin_char * (gram_count - 1)
     prev_layer = {begin_char: (0, begin_mark)}
     curr_layer = {}

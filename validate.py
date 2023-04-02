@@ -49,12 +49,32 @@ def validate(predict_function, output: Optional[Path] = None, verbose: bool = Tr
     return corr_char / char_count, corr_sent / len(valid_set)
 
 
-def demo_validate():
-    with open('sina_loss.json', mode='r', encoding='utf-8') as fi:
-        loss_dict = json.load(fi)
-    with open('pinyin_to_hanzi.json', mode='r', encoding='utf-8') as fi:
+if __name__ == '__main__':
+    arg_parser = argparse.ArgumentParser(description='Validate existing HMM model.')
+    arg_parser.add_argument('LOSS_DICT', type=str,
+                            help='path to loss dictionary trained with train.py')
+    arg_parser.add_argument('-p', '--pinyin-dict', default='pinyin_dict.json',
+                            help='path to pinyin dictionary. Leave blank for default')
+    arg_parser.add_argument('-o', '--output-path', default='',
+                            help='path to parsed output. Leave blank to suppress writing to file')
+    args = arg_parser.parse_args()
+
+    try:
+        loss_file = open(args.LOSS_DICT, mode='r', encoding='utf-8')
+        loss_dict = json.load(loss_file)
+    except FileNotFoundError:
+        print("Loss dictionary not found!")
+        exit(1)
+    try:
+        fi = open(args.pinyin_dict, mode='r', encoding='utf-8')
         pinyin_dict = json.load(fi)
+    except FileNotFoundError:
+        print("Pinyin dictionary not found. "
+              "Check whether pinyin_dict.json is placed in the same folder as this script.")
+        exit(1)
     print('file loaded')
 
-    validate(lambda t: viterbi_ngram(t.split(), loss_dict, pinyin_dict, 3), Path('3gram_output.txt'))
-
+    if args.output_dict == '':
+        validate(lambda t: viterbi_ngram(t.split(), loss_dict, pinyin_dict))
+    else:
+        validate(lambda t: viterbi_ngram(t.split(), loss_dict, pinyin_dict), Path(args.output_dict))
