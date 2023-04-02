@@ -36,6 +36,7 @@ def get_freq(corpus: list[list[str]], base_dict: MyDict = None, verbose: bool = 
     Count frequency of every character in a corpus.
 
     :param corpus: segmented corpus. See `wash_corpus`.
+    :param base_dict: previous freq dict if applicable. For accumulative training.
     :param verbose: provide verbose output or not.
     :return: a frequency dictionary, each key-value pair denoting one character. Characters not present in the corpus do not have an entry.
     """
@@ -54,6 +55,7 @@ def get_ngram(corpus: list[list[str]], gram_count: int, base_dict: MyDict = None
 
     :param corpus: segmented corpus. See `wash_corpus`.
     :param gram_count: the parameter n as in n-gram.
+    :param base_dict: previous gram dict if applicable. For accumulative training.
     :param verbose: provide verbose output or not.
     :return: an n-gram dictionary. Each key is a (n-1)-chars-long sector, and its value is a dict holding the frequency of all its successive parts. Patterns not present in the corpus do not have an entry.
     """
@@ -128,26 +130,20 @@ def compute_loss(freq_dict: dict, gram_dict: dict, accepted_chars: set, smoothin
         freq_dict[key] = -log(freq_dict[key])
     loss_dict[default_mark] = freq_dict
     print("done computing!")
-    return loss_dict
+
+    # pack them into one dictionary
+    return {"smoothing": smoothing_factor, "losses": loss_dict}
 
 
-def get_loss_dict(corpus: list[list[str]], accepted_chars: set, gram_count: int,
-                  smoothing_factor: float, freq_dict: dict = None, verbose: bool = True):
-    if freq_dict is None:
-        freq_dict = get_freq(corpus, verbose)
-    gram_dict = get_ngram(corpus, gram_count, verbose)
-    loss_dict = compute_loss(freq_dict, gram_dict, accepted_chars, smoothing_factor, verbose)
-    return loss_dict
-
-
-def viterbi_ngram(pinyin: list[str], loss_dict: dict, pinyin_dict: dict, gram_count: int, smoothing_factor: float):
+def viterbi_ngram(pinyin: list[str], loss_dict: dict, pinyin_dict: dict, gram_count: int):
     # Each entry in a layer is of form added_char: (min_loss, prefix_str).
     # Both store what you would expect them to.
     begin_mark = begin_char * (gram_count - 1)
-    prev_layer = {begin_mark: (0, begin_char * (gram_count - 1))}
+    prev_layer = {begin_char: (0, begin_mark)}
     curr_layer = {}
     default_mark = default_char * (gram_count - 1)
-    factor_loss = -log(1 - smoothing_factor)
+    factor_loss = -log(1 - loss_dict['smoothing'])
+    loss_dict = loss_dict['losses']
 
     for syl in pinyin:
         if syl not in pinyin_dict:
@@ -184,7 +180,7 @@ def demo():
     while True:
         py = input()
         py = py.strip().split()
-        print(viterbi_ngram(py, loss_dict, pinyin_dict, 2, 0.99))
+        print(viterbi_ngram(py, loss_dict, pinyin_dict, 2))
 
 
 def validate(predict_function, output: Optional[Path] = None, verbose: bool = True):
@@ -236,42 +232,45 @@ def demo_validate():
         pinyin_dict = json.load(fi)
     print('file loaded')
 
-    validate(lambda t: viterbi_ngram(t.split(), loss_dict, pinyin_dict, 3, 0.9999), Path('3gram_output.txt'))
+    validate(lambda t: viterbi_ngram(t.split(), loss_dict, pinyin_dict, 3), Path('3gram_output.txt'))
 
 
-def t0():
+def train(corpus_name: str, gram_count: int):
     with open('pinyin_to_hanzi.json', mode='r', encoding='utf-8') as fi:
         pinyin_dict = json.load(fi)
-    fi = open('corpus/sina_news.txt', mode='r', encoding='utf-8')
-    print("loaded!")
+    print("Pinyin dictionary loaded")
+    fi = open('corpus/%d.txt' % corpus_name, mode='r', encoding='utf-8')
     accepted_chars = set([char for group in pinyin_dict.values() for char in group])
 
     count = 0
     corpus = []
     gram_dict = MyDict()
     freq_dict = MyDict()
+    print("Start training")
     t0 = time.time()
     for line in fi:
         corpus.append(line.strip().replace(begin_char, ''))
         count += 1
         if count % 100000 == 0:
-            print(count)
+            t1 = time.time()
+            print("%d records trained in %d secs" % (count, int(t1 - t0)))
             corp = wash_corpus(corpus, accepted_chars)
             get_freq(corp, freq_dict, False)
-            get_ngram(corp, 3, gram_dict, False)
+            get_ngram(corp, gram_count, gram_dict, False)
             corpus.clear()
     corp = wash_corpus(corpus, accepted_chars)
-    get_freq(corp, freq_dict)
-    get_ngram(corp, 3, gram_dict)
+    get_freq(corp, freq_dict, False)
+    get_ngram(corp, gram_count, gram_dict, False)
     t1 = time.time()
+    print("%d records trained in %d secs; frequency statistics completed" % (count, int(t1 - t0)))
     loss_dict = compute_loss(freq_dict, gram_dict, accepted_chars, 0.9999, True)
     t2 = time.time()
-    with open('txt_3_loss.json', mode='w', encoding='utf-8') as fo:
+    print("Probabilistic data computed in %d secs" % int(t2 - t1))
+    print("Finished training on corpora %s in %d seconds" % (corpus_name, int(t2 - t0)))
+    with open('%s_%d_loss.json' % (corpus_name, gram_count), mode='w', encoding='utf-8') as fo:
         json.dump(loss_dict, fo)
     t3 = time.time()
-    print("%d, %d, %d, %d" % (t0, t1, t2, t3))
-    demo_validate()
-    demo()
+    print("Written to disk in %d secs" % int(t3 - t2))
 
 
 if __name__ == '__main__':
