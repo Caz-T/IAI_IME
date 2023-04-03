@@ -9,6 +9,18 @@ argparse >= 1.4.0
 ## 文件树
 
 ```
+.
+├── README.md
+├── construct.py
+├── demo.py
+├── get_pinyin_dict.py
+├── pinyin_dict.json
+├── train.py
+├── validate.py
+├── validation
+│   ├── input.txt
+│   └── std_output.txt
+└── viterbi.py
 
 ```
 可运行的文件包括`get_pinyin_dict.py`, `demo.py`, `validate.py`和`train.py`。`construct.py`是加权训练综合语料库的脚本，需要在`./src/corpus/`中包括全部五个语料库文件时才能运行。
@@ -32,11 +44,4 @@ python demo.py
 这段代码会在微博数据库上（如果已经放入`./src/corpus/`路径）训练二元模型，模型参数保存在`./src/loss.json`中，然后用标准输入输出进行验证，在命令行输出准确率计算结果，最后以上面这个模型启动交互式输入输出界面，直到用户输入空字符串为止。
 
 这仅仅是一个用例。`train.py`是训练脚本，`validate.py`是验证脚本，`demo.py`是交互式demo脚本。可运行`python {文件}.py -h`查阅详细的命令行参数和帮助信息。
-
-## 语料和模型下载
-
-所有使用的语料和模型都可以在[这里](https://cloud.tsinghua.edu.cn/d/4fc00c5095f643348703/)下载。
-
-
-
 
